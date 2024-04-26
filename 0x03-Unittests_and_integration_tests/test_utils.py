@@ -2,8 +2,10 @@
 """ Utils function test module """
 from typing import Any, Mapping, Sequence
 from unittest import TestCase
+from unittest.mock import Mock, patch, MagicMock
 from parameterized import parameterized
-from utils import access_nested_map
+from requests import utils
+from utils import access_nested_map, get_json
 
 
 class TestAccessNestedMap(TestCase):
@@ -26,3 +28,22 @@ class TestAccessNestedMap(TestCase):
         """ Tests the access map function with raising errors """
         with self.assertRaises(KeyError):
             access_nested_map(nested_map, path)
+
+
+class TestGetJson(TestCase):
+    """ Test for get_json function """
+    @parameterized.expand([
+            ("http://example.com", {"payload": True}),
+            ("http://holberton.io", {"payload": False})
+        ])
+    @patch('utils.requests')
+    def test_get_json(self, test_url, test_payload, mock_requests):
+        """ Test for return value of get json """
+        mock_json = Mock()
+        mock_json.json.return_value = test_payload
+        mock_get = Mock()
+        mock_get.return_value = mock_json
+        mock_requests.get = mock_get
+
+        self.assertEqual(get_json(test_url), test_payload)
+        mock_get.assert_called_once()
