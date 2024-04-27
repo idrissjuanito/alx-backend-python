@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """ Client Testing """
 from unittest import TestCase
-from unittest.mock import patch
-from parameterized import parameterized
+from unittest.mock import MagicMock, Mock, patch
+from parameterized import parameterized, parameterized_class
 from client import GithubOrgClient
+from fixtures import TEST_PAYLOAD
 
 
 class TestGithubOrgClient(TestCase):
@@ -53,3 +54,45 @@ class TestGithubOrgClient(TestCase):
         """ Test has license method """
         found_license = GithubOrgClient.has_license(repo, license_key)
         self.assertEqual(found_license, expected)
+
+
+@parameterized_class(
+        ("org_payload", "repos_payload", "expected_repos", "apache2_repos"),
+        TEST_PAYLOAD
+    )
+class TestIntegrationGithubOrgClient(TestCase):
+    """ Github intergration test class """
+    @classmethod
+    def setUpClass(cls):
+        """ Set up class """
+        cls.get_patcher = patch("utils.requests")
+        request_mock = cls.get_patcher.start()
+        get_mock = MagicMock()
+        json_mock = MagicMock()
+        get_mock.json = json_mock
+
+        def get_side_effect(url):
+            if url == GithubOrgClient.ORG_URL.format(org="google"):
+                json_mock.return_value = cls.org_payload
+            if url == cls.org_payload["repos_url"]:
+                json_mock.return_value = cls.repos_payload
+            return get_mock
+        get_mock.side_effect = get_side_effect
+        request_mock.get = get_mock
+
+    @classmethod
+    def tearDownClass(cls):
+        """ TestCase teardown method """
+        cls.get_patcher.stop()
+
+    def test_public_repos(self):
+        """ tests public repos """
+        new_github_test = GithubOrgClient("google")
+        repos = new_github_test.public_repos()
+        self.assertEqual(repos, self.expected_repos)
+
+    def test_public_repos_with_license(self):
+        """ Test public repo filter by license """
+        new_github_test = GithubOrgClient("google")
+        repos = new_github_test.public_repos(license="apache-2.0")
+        self.assertEqual(repos, self.apache2_repos)
