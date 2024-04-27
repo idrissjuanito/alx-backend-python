@@ -63,27 +63,27 @@ class TestGithubOrgClient(TestCase):
 class TestIntegrationGithubOrgClient(TestCase):
     """ Github intergration test class """
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(self):
         """ Set up class """
-        cls.get_patcher = patch("utils.requests")
-        request_mock = cls.get_patcher.start()
+        self.get_patcher = patch("utils.requests")
+        request_mock = self.get_patcher.start()
         get_mock = MagicMock()
         json_mock = MagicMock()
         get_mock.json = json_mock
 
         def get_side_effect(url):
             if url == GithubOrgClient.ORG_URL.format(org="google"):
-                json_mock.return_value = cls.org_payload
-            if url == cls.org_payload["repos_url"]:
-                json_mock.return_value = cls.repos_payload
+                json_mock.return_value = self.org_payload
+            if url == self.org_payload["repos_url"]:
+                json_mock.return_value = self.repos_payload
             return get_mock
         get_mock.side_effect = get_side_effect
         request_mock.get = get_mock
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(self):
         """ TestCase teardown method """
-        cls.get_patcher.stop()
+        self.get_patcher.stop()
 
     def test_public_repos(self):
         """ tests public repos """
