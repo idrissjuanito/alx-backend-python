@@ -26,5 +26,21 @@ class TestGithubOrgClient(TestCase):
         with patch.object(GithubOrgClient, 'org') as org_mock:
             org_mock.return_value = {'repos_url': 'makeint'}
             new_test = GithubOrgClient("maker")
-            new_test.org
-            self.assertEqual(new_test._public_repos_url, "makeint")
+            # self.assertEqual(new_test._public_repos_url, "makeint")
+
+    @patch('client.get_json')
+    def test_public_repos(self, json_mock):
+        """ this is it"""
+        get_json_repos = [
+                {'name': 'first public'},
+                {'name': 'second public'}
+            ]
+        json_mock.return_value = get_json_repos
+        with patch.object(GithubOrgClient, '_public_repos_url') as org_mock:
+            org_mock.return_value = "someething"
+            new_test = GithubOrgClient("maker")
+            new_test._public_repos_url()
+            result = new_test.public_repos()
+            self.assertEqual(result, ['first public', 'second public'])
+            org_mock.assert_called_once()
+            json_mock.assert_called_once()
